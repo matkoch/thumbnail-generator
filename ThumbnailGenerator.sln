@@ -1,0 +1,14 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ThumbnailGenerator", "ThumbnailGenerator\ThumbnailGenerator.csproj", "{BB8057D6-13C5-4CD0-992E-CB30BEB6AC13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB8057D6-13C5-4CD0-992E-CB30BEB6AC13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB8057D6-13C5-4CD0-992E-CB30BEB6AC13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -28,11 +28,21 @@ using static Nuke.Common.Logger;
 [UnsetVisualStudioEnvironmentVariables]
 class Build : NukeBuild
 {
-    public static int Main () => Execute<Build>(x => x.GenerateThumbnail);
+    public static int Main() => Execute<Build>(x => x.GenerateThumbnail);
+// nuke --image-file /Users/matt/code/blog/assets/images/2020-02-04-yaml-hell-in-devops/cover.jpg --title "Overcoming YAML Pain" "in CI/CD" --tags nuke teamcity azure-pipelines github kotlin --font-size 75 --image-opacity 1 --badge-height 80
+    [Parameter] readonly string[] Title;
+    [Parameter] readonly string[] Tags;
+    [Parameter] readonly string Author = "matthias";
 
-    [Parameter] readonly AbsolutePath BackgroundImageFile;
-    [Parameter] readonly string Title = "Reusable Build Components with\nDefault Interface Implementations";
-    [Parameter] readonly string[] Tags = {"csharp", "nuke"};
+    [Parameter] readonly AbsolutePath ImageFile;
+    [Parameter] readonly float ImageGrayscale = 0.8f;
+    [Parameter] readonly float ImageOpacity = 0.7f;
+    [Parameter] readonly int FontSize = 70;
+    [Parameter] readonly int TagBadgeHeight = 80;
+    [Parameter] readonly int TagBadgeMargin = 40;
+    [Parameter] readonly int AuthorBadgeHeight = 120;
+    [Parameter] readonly int BorderPadding = 60;
+
 
     string[] FontDownloadUrls =>
         new[]
@@ -65,18 +75,20 @@ class Build : NukeBuild
 
     Target GenerateThumbnail => _ => _
         .DependsOn(InstallFonts)
+        .Requires(() => Title)
+        .Requires(() => ImageFile)
         .Executes(() =>
         {
             const int width = 1200;
             const int height = 675;
             var image = new Image<Rgba64>(width: width, height: height);
 
-            var backgroundImage = Image.Load(BackgroundImageFile);
+            var backgroundImage = Image.Load(ImageFile);
             var (widthScale, heightScale) = (1f * width / backgroundImage.Width, 1f * height / backgroundImage.Height);
             var scale = backgroundImage.Height * widthScale > height ? widthScale : heightScale;
             backgroundImage.Mutate(x => x
-                .Resize((int)(backgroundImage.Width * scale), (int)(backgroundImage.Height * scale))
-                .Grayscale(0.8f)
+                .Resize((int) (backgroundImage.Width * scale), (int) (backgroundImage.Height * scale))
+                .Grayscale(ImageGrayscale)
                 .Vignette(image.Width * 0.8f, image.Height * 0.7f)
             );
 
@@ -91,32 +103,48 @@ class Build : NukeBuild
 
             image.Mutate(x => x
                 .BackgroundColor(Color.Black)
-                .DrawImage(backgroundImage, Point.Empty, 0.7f)
+                .DrawImage(backgroundImage, Point.Empty, ImageOpacity)
                 // .Fill(linearGradientBrush, new Rectangle(0, 0, image.Width, image.Height))
                 .DrawText(
-                    new TextGraphicsOptions {TextOptions = new TextOptions { WrapTextWidth = image.Width - 80}},
-                    text: Title,
-                    font:robotoFont.CreateFont(70),
-                    brush: Brushes.Solid(Color.WhiteSmoke), pen: Pens.Solid(Color.Black, 1.2f),
-                    location:new PointF(60, image.Height * 0.60f)));
+                    new TextGraphicsOptions
+                    {
+                        TextOptions = new TextOptions
+                        {
+                            WrapTextWidth = image.Width - 2 * BorderPadding
+                        }
+                    },
+                    text: Title.JoinNewLine(),
+                    font: robotoFont.CreateFont(FontSize),
+                    brush: Brushes.Solid(Color.WhiteSmoke),
+                    pen: Pens.Solid(Color.Black, 1.2f),
+                    location: new PointF(BorderPadding, image.Height * 0.55f)));
 
-            var right = image.Width - 60;
-            foreach (var tagImageName in Tags)
+            var right = image.Width - BorderPadding;
+            foreach (var tagImage in TagBadgeImages.Reverse())
             {
-                var tagImage = Image.Load(BackgroundImageFile.Parent / $"{tagImageName}.png");
-                var tagScale = 1f * 100 / tagImage.Height;
-                tagImage.Mutate(x => x.Resize((int)(tagImage.Width * tagScale), (int)(tagImage.Height * tagScale)));
                 right -= tagImage.Width;
-                image.Mutate(x => x.DrawImage(tagImage, new Point(right, 60), 1f));
-                right -= 40;
+                image.Mutate(x => x.DrawImage(tagImage, new Point(right, BorderPadding), 1f));
+                right -= TagBadgeMargin;
             }
 
-            var meImage = Image.Load(BackgroundImageFile.Parent / "me.png");
-            var meScale = 1f * 100 / meImage.Height;
-            meImage.Mutate(x => x.Resize((int)(meImage.Width * meScale), (int)(meImage.Height * meScale)));
-            image.Mutate(x => x.DrawImage(meImage, new Point(60, 60), 1f));
+            image.Mutate(x => x
+                .DrawImage(
+                    image: GetBadgeImage(BuildProjectDirectory / "authors" / $"{Author}.png", AuthorBadgeHeight),
+                    location: new Point(60, 60), 1f));
 
-            using var fileStream = new FileStream(BackgroundImageFile.Parent / $"thumbnail.jpeg", FileMode.Create);
+            using var fileStream = new FileStream(ImageFile.Parent / $"thumbnail.jpeg", FileMode.Create);
             image.SaveAsJpeg(fileStream);
         });
+
+    IEnumerable<Image> TagBadgeImages => Tags
+        .Select(x => BuildProjectDirectory / "icons" / $"{x}.png")
+        .Select(imageFile => GetBadgeImage(imageFile, TagBadgeHeight));
+
+    Image GetBadgeImage(AbsolutePath imageFile, int height)
+    {
+        var image = Image.Load(imageFile);
+        var scale = 1f * height / image.Height;
+        image.Mutate(x => x.Resize((int) (image.Width * scale), (int) (image.Height * scale)));
+        return image;
+    }
 }

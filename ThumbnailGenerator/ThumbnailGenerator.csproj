@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>thumbnail</ToolCommandName>
-    
+    <ToolCommandName>twitter-card</ToolCommandName>
+
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace></RootNamespace>
@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="0.24.11" />
+    <PackageReference Include="Nuke.Common" Version="0.25.0-alpha0283" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0008" />
   </ItemGroup>
 

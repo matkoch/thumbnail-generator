@@ -6,8 +6,8 @@ using System.Numerics;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
 using SixLabors.Fonts;
@@ -23,10 +23,51 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.HttpTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Logger;
+using static Nuke.Common.ProjectModel.ProjectModelTasks;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
+
+
+public interface IGlobalTool
+{
+    string GlobalToolPackageName => Path.GetFileNameWithoutExtension(NukeBuild.BuildProjectFile);
+    string GlobalToolVersion => "1.0.0";
+
+    Target PackGlobalTool => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            DotNetPack(_ => _
+                .SetProject(NukeBuild.BuildProjectFile)
+                .SetOutputDirectory(NukeBuild.TemporaryDirectory));
+        });
+
+    Target InstallGlobalTool => _ => _
+        .Unlisted()
+        .DependsOn(UninstallGlobalTool)
+        .DependsOn(PackGlobalTool)
+        .Executes(() =>
+        {
+            DotNetToolInstall(_ => _
+                .SetPackageName(GlobalToolPackageName)
+                .EnableGlobal()
+                .AddSources(NukeBuild.TemporaryDirectory)
+                .SetVersion(GlobalToolVersion));
+        });
+
+    Target UninstallGlobalTool => _ => _
+        .Unlisted()
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetToolUninstall(_ => _
+                .SetPackageName(GlobalToolPackageName)
+                .EnableGlobal());
+        });
+}
 
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
-class Build : NukeBuild
+class Build : NukeBuild, IGlobalTool
 {
     public static int Main() => Execute<Build>(x => x.GenerateThumbnail);
 // nuke --image-file /Users/matt/code/blog/assets/images/2020-02-04-yaml-hell-in-devops/cover.jpg --title "Overcoming YAML Pain" "in CI/CD" --tags nuke teamcity azure-pipelines github kotlin --font-size 75 --image-opacity 1 --badge-height 80

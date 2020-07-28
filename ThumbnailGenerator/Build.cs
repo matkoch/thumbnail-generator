@@ -70,7 +70,7 @@ public interface IGlobalTool
 class Build : NukeBuild, IGlobalTool
 {
     public static int Main() => Execute<Build>(x => x.GenerateThumbnail);
-// nuke --image-file /Users/matt/code/blog/assets/images/2020-02-04-yaml-hell-in-devops/cover.jpg --title "Overcoming YAML Pain" "in CI/CD" --tags nuke teamcity azure-pipelines github kotlin --font-size 75 --image-opacity 1 --badge-height 80
+// nuke --image-file ~/code/blog/assets/images/2020-02-11-implementing-wiring-and-debugging-custom-msbuild-tasks/cover.jpg --title "Implementing and Debugging" "Custom MSBuild Tasks" --tags msbuild rider msbuild-log-viewer dotnet --font-size 75 --image-opacity 1 --badge-height 80
     [Parameter] readonly string[] Title;
     [Parameter] readonly string[] Tags;
     [Parameter] readonly string Author = "matthias";
